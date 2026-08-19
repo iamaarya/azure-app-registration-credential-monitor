@@ -77,8 +77,9 @@ Monitors all Azure App Registrations, detects client secrets and certificates ap
 ## Prerequisites
 - An Azure subscription
 - Permission to create Azure resources
-- Permission to grant Microsoft Graph application permissions
+- Appropriate Microsoft Entra permissions to grant Microsoft Graph application permissions
 - An email address for notifications
+- Azure Cloud Shell / PowerShell
 
 ---
 
@@ -119,41 +120,49 @@ Monitors all Azure App Registrations, detects client secrets and certificates ap
 - Runtime: 7.2  
 - Create the runbook
 
-# Connect first
+### Step 4 — Grant Microsoft Graph permission (assign Application.Read.All)
+The Automation Account's System Assigned Managed Identity (the Runbook identity) must be granted the Microsoft Graph application permission Application.Read.All (Application permission) so the runbook can read all App Registrations.
+
+Follow these steps to grant the permission:
+
+1. In the Azure Portal go to your Automation Account → Identity → System assigned.
+2. Copy the Object (principal) ID shown on that page — this is the Managed Identity Object (principal) ID you'll use below.
+3. The Runbook managed identity requires the Microsoft Graph Application permission: `Application.Read.All` (Application permission). Do NOT add `AppRoleAssignment.ReadWrite.All` as a permission required by the Runbook — that scope is only needed by an administrator/deployment account when performing the assignment.
+4. From an administrator context (for example, using Azure Cloud Shell or PowerShell with an admin account that can grant app role assignments), run the following Microsoft Graph PowerShell script to assign Application.Read.All to the Automation Account Managed Identity.
+
+```powershell
 Connect-MgGraph -Scopes "Application.Read.All","AppRoleAssignment.ReadWrite.All"
 
-# Managed Identity Object ID
-$ManagedIdentityObjectId = "719fd804-ae89-4c69-8f27-b690471d053a"
+# UPDATE ONLY THIS VALUE
+$ManagedIdentityObjectId = "YOUR-MANAGED-IDENTITY-OBJECT-ID"
 
 # Microsoft Graph App ID
 $GraphAppId = "00000003-0000-0000-c000-000000000000"
 
-# Get Managed Identity Service Principal
 $ManagedIdentity = Get-MgServicePrincipal `
     -ServicePrincipalId $ManagedIdentityObjectId
 
-# Get Microsoft Graph Service Principal
 $Graph = Get-MgServicePrincipal `
     -Filter "appId eq '$GraphAppId'" `
     -Property AppRoles
 
-# Find Application.Read.All
 $Permission = $Graph.AppRoles |
     Where-Object {
-        $_.Value -eq "Application.Read.All" `
-        -and $_.AllowedMemberTypes -contains "Application" `
-        -and $_.IsEnabled -eq $true
+        $_.Value -eq "Application.Read.All" -and
+        $_.AllowedMemberTypes -contains "Application"
     }
 
-# Assign Application.Read.All
 New-MgServicePrincipalAppRoleAssignment `
     -ServicePrincipalId $ManagedIdentity.Id `
     -PrincipalId $ManagedIdentity.Id `
     -ResourceId $Graph.Id `
     -AppRoleId $Permission.Id
+```
 
-Write-Host ""
-Write-Host "Application.Read.All assigned successfully." -ForegroundColor Green
+Important notes:
+- Update only `$ManagedIdentityObjectId` with the Object (principal) ID of your Automation Account Managed Identity.
+- The `Connect-MgGraph` call in the example includes `AppRoleAssignment.ReadWrite.All` because the administrator performing the assignment must have the ability to add the app role assignment; the runbook itself does not require that permission.
+- After you assign `Application.Read.All` (application permission) to the Managed Identity, ensure admin consent is applied at tenant level if required by your tenant policies.
 
 ### Step 5 — Add the Runbook script
 - Automation Account → Runbooks → `AppCredentialExpiryMonitor` → Edit
