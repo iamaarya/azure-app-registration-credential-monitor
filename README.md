@@ -3,7 +3,6 @@
 Monitor Azure App Registration client secrets and certificates before they expire.
 
 **Notifications:** Azure Monitor Action Group → Email  
-**SendGrid:** Not used.
 
 ## Video Structure
 
