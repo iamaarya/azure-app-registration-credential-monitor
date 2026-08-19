@@ -46,7 +46,7 @@ The deployment script seeds four Automation Variables on first run and keeps the
 ### Option A — Run it bare (fastest)
 
 ```powershell
-./deploy-app-credential-monitor.ps1
+./AppCredentialExpiryMonitor-SpecificApp.ps1
 ```
 
 You'll only be prompted for one thing: your notification email. Everything else uses defaults:
@@ -59,7 +59,7 @@ This gets the whole pipeline (resource group, workspace, automation account, run
 ### Option B — Run it with values upfront
 
 ```powershell
-./deploy-app-credential-monitor.ps1 `
+./AppCredentialExpiryMonitor-SpecificApp.ps1 `
     -NotificationEmail "you@example.com" `
     -ExpiryThresholdDays 15 `
     -TargetApplicationAppIds "11111111-1111-1111-1111-111111111111","22222222-2222-2222-2222-222222222222"
