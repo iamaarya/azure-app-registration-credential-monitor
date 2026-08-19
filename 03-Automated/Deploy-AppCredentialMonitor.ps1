@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-# VIEWER PREREQUISITES
+# PREREQUISITES
 # - Recommended: Azure Portal -> Cloud Shell -> PowerShell.
 # - PowerShell 7+ is required.
 # - Az / Microsoft.Graph modules are installed or loaded by the deployment script.
@@ -9,8 +9,6 @@
 # - Automation Account must have an existing PowerShell 7.2 Runtime Environment.
 # - Required Az modules must be available to the Runbook runtime.
 # - Azure Monitor email receiver must be verified.
-# - No SendGrid is used.
-#
 
 <#
 ===============================================================
