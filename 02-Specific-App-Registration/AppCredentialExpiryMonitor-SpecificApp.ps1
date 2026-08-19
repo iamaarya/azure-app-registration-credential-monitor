@@ -1540,17 +1540,15 @@ else {
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host `
-    "Linking Runbook -> Daily Schedule..." `
-    -ForegroundColor Cyan
+Write-Host "Linking Runbook -> Daily Schedule..." -ForegroundColor Cyan
 
-# Use the Az.Automation cmdlets for the association.
-# This avoids the REST "Model cannot be null" error.
 $ExistingJobSchedules =
-    Get-AzAutomationJobSchedule `
+    Get-AzAutomationScheduledRunbook `
         -ResourceGroupName $ResourceGroupName `
         -AutomationAccountName $AutomationAccountName `
-        -ErrorAction Stop
+        -RunbookName $RunbookName `
+        -ScheduleName $ScheduleName `
+        -ErrorAction SilentlyContinue
 
 $AlreadyLinked =
     @($ExistingJobSchedules) |
@@ -1563,22 +1561,15 @@ $AlreadyLinked =
 if (-not $AlreadyLinked) {
 
     $ScheduleParameters = @{
-        EXPIRYTHRESHOLDDAYS =
-            "$ExpiryThresholdDays"
+        EXPIRYTHRESHOLDDAYS = "$ExpiryThresholdDays"
     }
 
-    if (
-        $TargetApplicationAppIds.Count -gt 0
-    ) {
-        $ScheduleParameters.TargetApplicationAppIds =
-            $TargetApplicationAppIds
+    if ($TargetApplicationAppIds.Count -gt 0) {
+        $ScheduleParameters.TargetApplicationAppIds = $TargetApplicationAppIds
     }
 
-    if (
-        $TargetApplicationDisplayNames.Count -gt 0
-    ) {
-        $ScheduleParameters.TargetApplicationDisplayNames =
-            $TargetApplicationDisplayNames
+    if ($TargetApplicationDisplayNames.Count -gt 0) {
+        $ScheduleParameters.TargetApplicationDisplayNames = $TargetApplicationDisplayNames
     }
 
     Register-AzAutomationScheduledRunbook `
@@ -1590,15 +1581,10 @@ if (-not $AlreadyLinked) {
         -ErrorAction Stop |
         Out-Null
 
-    Write-Host `
-        "Runbook linked to Daily Schedule." `
-        -ForegroundColor Green
+    Write-Host "Runbook linked to Daily Schedule." -ForegroundColor Green
 }
 else {
-
-    Write-Host `
-        "Runbook already linked to Daily Schedule." `
-        -ForegroundColor Yellow
+    Write-Host "Runbook already linked to Daily Schedule." -ForegroundColor Yellow
 }
 
 
