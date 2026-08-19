@@ -133,18 +133,12 @@ Follow these steps to grant the permission:
 ```powershell
 Connect-MgGraph -Scopes "Application.Read.All","AppRoleAssignment.ReadWrite.All"
 
-# UPDATE ONLY THIS VALUE
+# UPDATE ONLY THIS
 $ManagedIdentityObjectId = "YOUR-MANAGED-IDENTITY-OBJECT-ID"
 
-# Microsoft Graph App ID
-$GraphAppId = "00000003-0000-0000-c000-000000000000"
-
-$ManagedIdentity = Get-MgServicePrincipal `
-    -ServicePrincipalId $ManagedIdentityObjectId
-
 $Graph = Get-MgServicePrincipal `
-    -Filter "appId eq '$GraphAppId'" `
-    -Property AppRoles
+    -Filter "appId eq '00000003-0000-0000-c000-000000000000'" `
+    -Property Id,AppRoles
 
 $Permission = $Graph.AppRoles |
     Where-Object {
@@ -153,8 +147,8 @@ $Permission = $Graph.AppRoles |
     }
 
 New-MgServicePrincipalAppRoleAssignment `
-    -ServicePrincipalId $ManagedIdentity.Id `
-    -PrincipalId $ManagedIdentity.Id `
+    -ServicePrincipalId $ManagedIdentityObjectId `
+    -PrincipalId $ManagedIdentityObjectId `
     -ResourceId $Graph.Id `
     -AppRoleId $Permission.Id
 ```
