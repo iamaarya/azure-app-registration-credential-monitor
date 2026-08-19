@@ -118,7 +118,7 @@ For each expiring credential, you'll see:
 | `RunbookName` | No | `AppCredentialExpiryMonitor` | Runbook name |
 | `ScheduleName` | No | `Daily-AppCredential-Check` | Schedule name |
 | `ExpiryThresholdDays` | No | `10` | Threshold for alerts |
-| `TargetApplicationAppIds` | No | Empty | Client IDs to monitor |
+| `TargetApplicationAppIds` | Yes | Empty | Client IDs to monitor |
 | `NotificationEmail` | **Yes** | — | Alert recipient |
 
 ## Next Steps
