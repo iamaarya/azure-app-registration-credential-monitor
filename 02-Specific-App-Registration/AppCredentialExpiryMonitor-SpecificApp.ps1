@@ -1539,99 +1539,56 @@ else {
 # Link Runbook -> Schedule
 # ------------------------------------------------------------
 
-$ExistingJobSchedulesUri =
-    "$ManagementUrl/subscriptions/$SubscriptionId" +
-    "/resourceGroups/$ResourceGroupName" +
-    "/providers/Microsoft.Automation" +
-    "/automationAccounts/$AutomationAccountName" +
-    "/jobSchedules" +
-    "?api-version=2024-10-23"
+Write-Host ""
+Write-Host `
+    "Linking Runbook -> Daily Schedule..." `
+    -ForegroundColor Cyan
 
-
+# Use the Az.Automation cmdlets for the association.
+# This avoids the REST "Model cannot be null" error.
 $ExistingJobSchedules =
-    Invoke-ArmRequest `
-        -Method GET `
-        -Uri $ExistingJobSchedulesUri
-
+    Get-AzAutomationJobSchedule `
+        -ResourceGroupName $ResourceGroupName `
+        -AutomationAccountName $AutomationAccountName `
+        -ErrorAction Stop
 
 $AlreadyLinked =
-    @($ExistingJobSchedules.value) |
+    @($ExistingJobSchedules) |
     Where-Object {
-
-        $_.properties.runbook.name -eq
-            $RunbookName -and
-
-        $_.properties.schedule.name -eq
-            $ScheduleName
-
+        $_.RunbookName -eq $RunbookName -and
+        $_.ScheduleName -eq $ScheduleName
     } |
     Select-Object -First 1
 
-
 if (-not $AlreadyLinked) {
 
-    $JobScheduleId =
-        [guid]::NewGuid().ToString()
-
-
-    $JobScheduleUri =
-        "$ManagementUrl/subscriptions/$SubscriptionId" +
-        "/resourceGroups/$ResourceGroupName" +
-        "/providers/Microsoft.Automation" +
-        "/automationAccounts/$AutomationAccountName" +
-        "/jobSchedules/$JobScheduleId" +
-        "?api-version=2024-10-23"
-
-
-    $JobScheduleBody = @{
-
-        properties = @{
-
-            schedule = @{
-
-                name =
-                    $ScheduleName
-            }
-
-            runbook = @{
-
-                name =
-                    $RunbookName
-            }
-
-            parameters = @{
-
-                EXPIRYTHRESHOLDDAYS =
-                    "$ExpiryThresholdDays"
-            }
-        }
+    $ScheduleParameters = @{
+        EXPIRYTHRESHOLDDAYS =
+            "$ExpiryThresholdDays"
     }
-
 
     if (
         $TargetApplicationAppIds.Count -gt 0
     ) {
-
-        $JobScheduleBody.properties.parameters.TargetApplicationAppIds =
+        $ScheduleParameters.TargetApplicationAppIds =
             $TargetApplicationAppIds
     }
-
 
     if (
         $TargetApplicationDisplayNames.Count -gt 0
     ) {
-
-        $JobScheduleBody.properties.parameters.TargetApplicationDisplayNames =
+        $ScheduleParameters.TargetApplicationDisplayNames =
             $TargetApplicationDisplayNames
     }
 
-
-    Invoke-ArmRequest `
-        -Method PUT `
-        -Uri $JobScheduleUri `
-        -Body $JobScheduleBody |
+    Register-AzAutomationScheduledRunbook `
+        -ResourceGroupName $ResourceGroupName `
+        -AutomationAccountName $AutomationAccountName `
+        -RunbookName $RunbookName `
+        -ScheduleName $ScheduleName `
+        -Parameters $ScheduleParameters `
+        -ErrorAction Stop |
         Out-Null
-
 
     Write-Host `
         "Runbook linked to Daily Schedule." `
@@ -1720,12 +1677,11 @@ $Kql = @"
 AzureDiagnostics
 | where ResourceProvider == "MICROSOFT.AUTOMATION"
 | where Category == "JobStreams"
-| where StreamType_s == "Output"
-| where ResultDescription startswith "CREDENTIAL_EXPIRING:"
+| where ResultDescription contains "CREDENTIAL_EXPIRING:"
 | extend AlertJson = parse_json(
     substring(
         ResultDescription,
-        strlen("CREDENTIAL_EXPIRING: ")
+        indexof(ResultDescription, "CREDENTIAL_EXPIRING:") + 20
     )
 )
 | project
@@ -1946,20 +1902,18 @@ Write-Host `
 
 
 $JobSchedules =
-    Invoke-ArmRequest `
-        -Method GET `
-        -Uri $ExistingJobSchedulesUri
+    Get-AzAutomationJobSchedule `
+        -ResourceGroupName $ResourceGroupName `
+        -AutomationAccountName $AutomationAccountName `
+        -ErrorAction Stop
 
 
 $MatchingJobSchedule =
-    @($JobSchedules.value) |
+    @($JobSchedules) |
     Where-Object {
 
-        $_.properties.runbook.name -eq
-            $RunbookName -and
-
-        $_.properties.schedule.name -eq
-            $ScheduleName
+        $_.RunbookName -eq $RunbookName -and
+        $_.ScheduleName -eq $ScheduleName
 
     } |
     Select-Object -First 1
