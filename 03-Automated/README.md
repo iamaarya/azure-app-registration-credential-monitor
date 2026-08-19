@@ -1,4 +1,3 @@
-```markdown name=03-Automated/README.md url=https://github.com/iamaarya/azure-app-registration-credential-monitor/blob/main/03-Automated/README.md
 # 03 — Automated
 
 Run from Azure Portal → Cloud Shell → PowerShell:
@@ -71,5 +70,3 @@ This solution detects and alerts on expiring credentials — it does not rotate 
 ---
 CloudWithAarya
 #Azure #MicrosoftEntra #AzureMonitor #Automation #MicrosoftGraph #CloudWithAarya
-```
-
