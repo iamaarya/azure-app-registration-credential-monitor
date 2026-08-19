@@ -119,11 +119,41 @@ Monitors all Azure App Registrations, detects client secrets and certificates ap
 - Runtime: 7.2  
 - Create the runbook
 
-### Step 4 — Grant Microsoft Graph permission
-- The Automation Account uses its System Assigned Managed Identity to access Microsoft Graph.
-- Grant the Managed Identity the Microsoft Graph application permission:
-  - Application permission → Application.Read.All
-- This allows the runbook to read application metadata (IDs, credential metadata, expiry dates). The runbook does not need client secret values.
+# Connect first
+Connect-MgGraph -Scopes "Application.Read.All","AppRoleAssignment.ReadWrite.All"
+
+# Managed Identity Object ID
+$ManagedIdentityObjectId = "719fd804-ae89-4c69-8f27-b690471d053a"
+
+# Microsoft Graph App ID
+$GraphAppId = "00000003-0000-0000-c000-000000000000"
+
+# Get Managed Identity Service Principal
+$ManagedIdentity = Get-MgServicePrincipal `
+    -ServicePrincipalId $ManagedIdentityObjectId
+
+# Get Microsoft Graph Service Principal
+$Graph = Get-MgServicePrincipal `
+    -Filter "appId eq '$GraphAppId'" `
+    -Property AppRoles
+
+# Find Application.Read.All
+$Permission = $Graph.AppRoles |
+    Where-Object {
+        $_.Value -eq "Application.Read.All" `
+        -and $_.AllowedMemberTypes -contains "Application" `
+        -and $_.IsEnabled -eq $true
+    }
+
+# Assign Application.Read.All
+New-MgServicePrincipalAppRoleAssignment `
+    -ServicePrincipalId $ManagedIdentity.Id `
+    -PrincipalId $ManagedIdentity.Id `
+    -ResourceId $Graph.Id `
+    -AppRoleId $Permission.Id
+
+Write-Host ""
+Write-Host "Application.Read.All assigned successfully." -ForegroundColor Green
 
 ### Step 5 — Add the Runbook script
 - Automation Account → Runbooks → `AppCredentialExpiryMonitor` → Edit
