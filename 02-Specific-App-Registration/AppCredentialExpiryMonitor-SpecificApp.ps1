@@ -1882,28 +1882,23 @@ Write-Host `
 # ------------------------------------------------------------
 
 Write-Host ""
-Write-Host `
-    "Verifying Runbook -> Schedule association..." `
-    -ForegroundColor Cyan
+Write-Host "Verifying Runbook -> Schedule association..." -ForegroundColor Cyan
 
-
-$JobSchedules =
-    Get-AzAutomationJobSchedule `
+$VerifyJobSchedules =
+    Get-AzAutomationScheduledRunbook `
         -ResourceGroupName $ResourceGroupName `
         -AutomationAccountName $AutomationAccountName `
-        -ErrorAction Stop
-
+        -RunbookName $RunbookName `
+        -ScheduleName $ScheduleName `
+        -ErrorAction SilentlyContinue
 
 $MatchingJobSchedule =
-    @($JobSchedules) |
+    @($VerifyJobSchedules) |
     Where-Object {
-
         $_.RunbookName -eq $RunbookName -and
         $_.ScheduleName -eq $ScheduleName
-
     } |
     Select-Object -First 1
-
 
 if ($MatchingJobSchedule) {
 
