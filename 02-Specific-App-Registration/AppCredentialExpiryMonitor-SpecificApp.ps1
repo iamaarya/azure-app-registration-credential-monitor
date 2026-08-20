@@ -1080,6 +1080,7 @@ $Headers = @{
 Write-Output `
     "Microsoft Graph authentication successful."
 
+try {
 
 # ============================================================
 # GET APPLICATION REGISTRATIONS
@@ -1089,11 +1090,11 @@ $Applications = @()
 
 
 $SelectClause =
-    "id,appId,displayName,passwordCredentials,keyCredentials"
+    'id,appId,displayName,passwordCredentials,keyCredentials'
 
 
 $BaseUri =
-    "https://graph.microsoft.com/v1.0/applications"
+    'https://graph.microsoft.com/v1.0/applications'
 
 
 $TargetFilters =
@@ -1152,18 +1153,30 @@ $TargetFilter =
     }
 
 
+# ------------------------------------------------------------
+# Build the query string using plain single-quoted literals for
+# the OData parameter names ($select, $top, $filter) -- avoids
+# backtick-escaped "`$" sequences entirely, since those have
+# proven unreliable after the runbook text passes through the
+# ARM draft/content upload.
+# ------------------------------------------------------------
+
+$QueryParts =
+    @(
+        ('$select=' + $SelectClause),
+        '$top=999'
+    )
+
+if ($TargetFilter) {
+
+    $QueryParts +=
+        ('$filter=' + [uri]::EscapeDataString($TargetFilter))
+}
+
 $Uri =
-    if ($TargetFilter) {
+    $BaseUri + '?' + ($QueryParts -join '&')
 
-        "$BaseUri?`$filter=$([uri]::EscapeDataString($TargetFilter))" +
-        "&`$select=$SelectClause" +
-        "&`$top=999"
-    }
-    else {
-
-        "$BaseUri?`$select=$SelectClause" +
-        "&`$top=999"
-    }
+Write-Output "Request URI: $Uri"
 
 
 while ($Uri) {
@@ -1464,6 +1477,40 @@ else {
 
 Write-Output ""
 Write-Output "Credential monitoring completed."
+
+}
+catch {
+
+    Write-Output ""
+    Write-Output "=========================================="
+    Write-Output "RUNBOOK ERROR - FULL DETAIL"
+    Write-Output "=========================================="
+    Write-Output ""
+    Write-Output "Message         : $($_.Exception.Message)"
+    Write-Output "Category        : $($_.CategoryInfo.Category)"
+    Write-Output "TargetObject    : $($_.CategoryInfo.TargetName)"
+    Write-Output "ScriptStackTrace: $($_.ScriptStackTrace)"
+
+    if ($_.ErrorDetails -and $_.ErrorDetails.Message) {
+        Write-Output "ErrorDetails    : $($_.ErrorDetails.Message)"
+    }
+
+    if ($_.Exception.Response) {
+        try {
+            $ResponseBody =
+                $_.Exception.Response.Content.ReadAsStringAsync().Result
+            Write-Output "ResponseBody    : $ResponseBody"
+        }
+        catch {
+            # Response body not readable; ignore.
+        }
+    }
+
+    Write-Output ""
+    Write-Output "The job will now be marked as Failed."
+
+    throw
+}
 '@
 
 
