@@ -46,31 +46,31 @@
 param(
 
     [string]$ResourceGroupName =
-        "rg-app-credential-monitor",
+        "rg-entra-credential-monitor",
 
     [string]$Location =
         "centralindia",
 
     [string]$WorkspaceName =
-        "law-app-credential-monitor",
+        "law-entra-credential-monitor",
 
     [string]$AutomationAccountName =
-        "aa-app-credential-monitor",
+        "aa-entra-credential-monitor",
 
     [string]$RunbookName =
-        "AppCredentialExpiryMonitor",
+        "rb-entra-credential-expiry",
 
     [string]$ScheduleName =
-        "Daily-AppCredential-Check",
+        "sch-daily-entra-credential-check",
 
     [string]$DiagnosticSettingName =
-        "Automation-To-Log-Analytics",
+        "diag-automation-credential-monitor",
 
     [string]$ActionGroupName =
-        "ag-app-credential-expiry",
+        "ag-entra-credential-expiry",
 
     [string]$AlertName =
-        "alert-app-credential-expiry",
+        "alert-entra-credential-expiry",
 
     [int]$ExpiryThresholdDays =
         10,
