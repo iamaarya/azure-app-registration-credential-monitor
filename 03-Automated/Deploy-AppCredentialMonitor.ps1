@@ -64,7 +64,7 @@ param(
         "Daily-AppCredential-Check",
 
     [string]$DiagnosticSettingName =
-        "Automation-To-LogAnalytics",
+        "Automation-To-Log-Analytics",
 
     [string]$ActionGroupName =
         "ag-app-credential-expiry",
